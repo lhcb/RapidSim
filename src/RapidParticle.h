@@ -105,6 +105,9 @@ class RapidParticle {
 		TString evtGenDecayModel() { return evtGenModel_; }
 		void setEvtGenDecayModel(TString value) { evtGenModel_ = value; }
 
+		TString evtGenDefinitions() { return evtGenDefs_; }
+		void setEvtGenDefinitions(TString value) { evtGenDefs_ = value; }
+
 	private:
 		bool hasFlavour(int flavour);
 
@@ -151,6 +154,7 @@ class RapidParticle {
 		TString varName_;
 
 		TString evtGenModel_;
+		TString evtGenDefs_;
 
 		//store alternative mass hypotheses
 		std::vector<TString> massHypothesisNames_;

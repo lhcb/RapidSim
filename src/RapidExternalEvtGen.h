@@ -30,8 +30,6 @@ class RapidExternalEvtGen : public RapidExternalGenerator {
 		static TString getEvtGenConjName(int id);
 
 	private:
-    	bool isB0Mixed( EvtParticle* p );
-    	bool isBsMixed( EvtParticle* p );
 		double calcFlightTime( FourVector& BDecayVtx, FourVector& B4mtm );
 #ifdef RAPID_EVTGEN
 		EvtGen* evtGen_;

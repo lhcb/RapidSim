@@ -6,9 +6,11 @@
 
 #include "TRandom.h"
 #include "TSystem.h"
+#include "TObjString.h"
 
 #ifdef RAPID_EVTGEN
 #include "EvtGen/EvtGen.hh"
+#include "EvtGenBase/EvtConst.hh"
 #include "EvtGenBase/EvtRandomEngine.hh"
 #include "EvtGenBase/EvtCPUtil.hh"
 #include "EvtGenBase/EvtHepMCEvent.hh"
@@ -37,12 +39,12 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 
 	// EvtParticle* baseParticle(0);
 	EvtSpinDensity* spinDensity = 0;
-	
+	// std::cout<<"parts[0]->id():   "<<parts[0]->id()<<std::endl; //RapSim itself generates both B and Bbar flavours when EvtCPUtil is called within the model ??
 	TString parentName = getEvtGenName(parts[0]->id());
 	EvtId theId = EvtPDL::evtIdFromLundKC(parts[0]->id());
 
 	int PDGId = EvtPDL::getStdHep( theId );
-
+	// std::cout<<"PDGId here:   "<<PDGId<<std::endl;
     if ( theId.getId() == -1 && theId.getAlias() == -1 ) {
         std::cout << "Error. Could not find valid EvtId for " << parentName << std::endl;
         return -1;
@@ -69,13 +71,11 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 	TLorentzVector pIn = parts[0]->getP();
 	EvtVector4R pInit(pIn.E(),pIn.Px(),pIn.Py(),pIn.Pz());
 
-
     EvtHepMCEvent* theEvent =
-        evtGen_->generateDecay( PDGId, pInit, origin, spinDensity );
-
+        evtGen_->generateDecay( PDGId, pInit, origin, spinDensity );	
 	// Retrieve the HepMC event information
     GenEvent* hepMCEvent = theEvent->getEvent();
-    // hepMCEvent->print();
+    // theEvent->print();
 
 	std::list<GenVertexPtr> allVertices;
 	
@@ -92,33 +92,30 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 
 	for ( auto theVertex : hepMCEvent->vertices() ) {
 		if ( theVertex == 0 ) {
-		            continue;
+		    continue;
 		}
 		auto nin  = theVertex->particles_in_size();
 		auto nout = theVertex->particles_out_size();
 
-		
 		if(nin==1 && nout ==1){
 
 			auto inParticle  = theVertex->particles_in()[0];
 			auto outParticle = theVertex->particles_out()[0];
+			if ( inParticle == 0 ) {
+        	    continue;
+        	}
 			int inPDGId = inParticle->pdg_id();
-			int PDGId = outParticle->pdg_id();
-			// std::cout<<""<<std::endl;
-			// std::cout<<"In nin==1 and nout==1"<<std::endl;
-			// std::cout<<""<<std::endl;
+			int outPDGId = outParticle->pdg_id();
+
 			if ( inPDGId == B0Id || inPDGId == BsId || inPDGId == B0barId || inPDGId == BsbarId ) {
 
-
-				// std::cout<<"inPDGId"<<inPDGId<<std::endl;
-				// std::cout<<"PDGId"<<PDGId<<std::endl;
 				
-				if (PDGId!=inPDGId){
+				if (outPDGId!=inPDGId){
 					hasOsc=true;
 					// std::cout<<""<<std::endl;
-					// std::cout<<" HAS OSCILLATED "<<std::endl;
+					// std::cout<<" HAS OSCILLATED in nin==1 and nout==1 "<<std::endl;
 					// std::cout<<" inPDGId: "<<inPDGId<<std::endl;
-					// std::cout<<" PDGId: "<<PDGId<<std::endl;
+					// std::cout<<" outPDGId: "<<outPDGId<<std::endl;
 					// std::cout<<""<<std::endl;
 				}
 				else{
@@ -126,11 +123,12 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 					// std::cout<<""<<std::endl;
 					// std::cout<<" HASN'T OSCILLATED "<<std::endl;
 					// std::cout<<" inPDGId: "<<inPDGId<<std::endl;
-					// std::cout<<" PDGId: "<<PDGId<<std::endl;
+					// std::cout<<" outPDGId: "<<outPDGId<<std::endl;
 					// std::cout<<""<<std::endl;
 				}
+
+				parts[iVtx]->setHasOsc(hasOsc);
 				
-        	
 			}
 
 			continue;
@@ -141,69 +139,42 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 			// the flight time.
 
 			for ( auto inParticle : theVertex->particles_in() ) {
-        	if ( inParticle == 0 ) {
-        	    continue;
-        	}
-			
-			FourMom = inParticle->momentum();
-			DecayVtx = theVertex->position();
-			
-			flightTime = calcFlightTime( DecayVtx, FourMom );
-			
-			parts[iVtx]->setId(inParticle->pdg_id());
-			parts[iVtx]->setDecaytime(flightTime);
-			parts[iVtx]->getDecayVertex()->setXYZ(DecayVtx.x(), DecayVtx.y(), DecayVtx.x());
-			
-			int inPDGId = inParticle->pdg_id();
-			// std::cout<<""<<std::endl;
-			// std::cout<<"In nin==1 and nout>1"<<std::endl;
-			// std::cout<<""<<std::endl;			
-			if(iVtx==0){
-        		if ( inPDGId == B0Id || inPDGId == BsId || inPDGId == B0barId || inPDGId == BsbarId ) {
-
-					
-					if (PDGId!=inPDGId){
-						hasOsc=true;
-						// std::cout<<""<<std::endl;
-						// std::cout<<" HAS OSCILLATED "<<std::endl;
-						// std::cout<<" inPDGId: "<<inPDGId<<std::endl;
-						// std::cout<<" PDGId: "<<PDGId<<std::endl;
-						// std::cout<<""<<std::endl;
-					}
-					else{
-						hasOsc=false;
-						// std::cout<<""<<std::endl;
-						// std::cout<<" HASN'T OSCILLATED "<<std::endl;
-						// std::cout<<" inPDGId: "<<inPDGId<<std::endl;
-						// std::cout<<" PDGId: "<<PDGId<<std::endl;
-						// std::cout<<""<<std::endl;
-					}
-
-					parts[iVtx]->setHasOsc(hasOsc);
+        		if ( inParticle == 0 ) {
+        	    	continue;
         		}
-			}
+
+				FourMom = inParticle->momentum();
+				DecayVtx = theVertex->position();
+				int inPDGId = inParticle->pdg_id();
+				if(iVtx==0){
+					flightTime = calcFlightTime( DecayVtx, FourMom );
+					parts[iVtx]->setId(inPDGId);
+					parts[iVtx]->setDecaytime(flightTime);
+					parts[iVtx]->getDecayVertex()->setXYZ(DecayVtx.x(), DecayVtx.y(), DecayVtx.x());
+				}
+							
        		}  
 
 			for ( auto outParticle : theVertex->particles_out() ) {
 			
-			if(outParticle->pdg_id() != 22){//discard PHOTOS info
-				
-				FourMom = outParticle->momentum();
-				OrigVtx = theVertex->position();
+				if(outParticle->pdg_id() != 22){//discard PHOTOS info this needs thought as one might want to simulate photons
+					
+					FourMom = outParticle->momentum();
+					OrigVtx = theVertex->position();
 
-				p4TLV.SetPxPyPzE(FourMom.px(),FourMom.py(),FourMom.pz(),FourMom.e());
+					p4TLV.SetPxPyPzE(FourMom.px(),FourMom.py(),FourMom.pz(),FourMom.e());
 
-				parts[iPart]->setP(p4TLV);
+					parts[iPart]->setP(p4TLV);
 
-				parts[iPart]->getOriginVertex()->setXYZ(OrigVtx.x(),OrigVtx.y(),OrigVtx.z());
-				parts[iPart]->setId(outParticle->pdg_id());
+					parts[iPart]->getOriginVertex()->setXYZ(OrigVtx.x(),OrigVtx.y(),OrigVtx.z());
+					parts[iPart]->setId(outParticle->pdg_id());
 
-				++iPart;
-				
-			}
+					++iPart;
+					
+				}
 			}
 			++iVtx;
-			// std::cout<<"hey: "<<iVtx<<std::endl;
+			// std::cout<<"Vtx number: "<<iVtx<<std::endl;
 		}
 	}
 
@@ -220,136 +191,7 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 #endif
 }
 
-// bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
-// #ifdef RAPID_EVTGEN
 
-// 	if(parts.size() < 1) {
-// 		std::cout << "WARNING in RapidExternalEvtGen::decay : There are no particles to decay." << std::endl;
-// 		return false;
-// 	}
-
-// 	EvtParticle* baseParticle(0);
-
-// 	EvtId theId = EvtPDL::evtIdFromLundKC(parts[0]->id());
-	
-
-// 	// Parent particle 4-momentum
-// 	TLorentzVector pIn = parts[0]->getP();
-// 	EvtVector4R pInit(pIn.E(),pIn.Px(),pIn.Py(),pIn.Pz());
-
-// 	baseParticle = EvtParticleFactory::particleFactory(theId, pInit);
-// 	if (baseParticle->getSpinStates() == 3) {baseParticle->setVectorSpinDensity();}
-
-// 	// std::cout<<""<<std::endl;
-// 	// std::cout<<""<<std::endl;
-// 	// std::cout<<"before"<<std::endl;
-// 	// baseParticle->printTree();
-// 	int motherIDbefore(EvtPDL::getStdHep(baseParticle->getId()));
-// 	// std::cout<<""<<std::endl;
-// 	// Generate the event
-// 	evtGen_->generateDecay(baseParticle);
-// 	// std::cout<<""<<std::endl;
-// 	// std::cout<<"after"<<std::endl;
-// 	// baseParticle->printTree();
-// 	int motherIDafter(EvtPDL::getStdHep(baseParticle->getId()));
-// 	// std::cout<<""<<std::endl;
-// 	// std::cout<<""<<std::endl;
-
-// 	// Store particles to read in the order RapidSim stores them
-// 	std::queue<EvtParticle*> evtParts;
-// 	// Also store the number of children expected for each of these particles so we can remove PHOTOS photons
-// 	std::queue<int> nExpectedChildren;
-		
-// 	evtParts.push(baseParticle);
-// 	nExpectedChildren.push(parts[0]->nDaughters());
-
-// 	EvtVector4R x4Evt;
-// 	EvtVector4R p4Evt;
-// 	TLorentzVector p4TLV;
-
-// 	int iPart=1; // The momentum and origin vertex of the first particle are already set
-
-// 	parts[0]->setId(EvtPDL::getStdHep(baseParticle->getId()));
-	
-// 	// bool isBMixed((isB0Mixed(baseParticle) || isBsMixed(baseParticle)));
-// 	bool isBMixed(motherIDbefore!=motherIDafter);
-
-// 	std::cout<<"isBMixed :"<<isBMixed<<std::endl;
-// 	if (isBMixed){
-// 		std::cout<<"motherIDbefore: "<<motherIDbefore <<std::endl;
-// 		std::cout<<"motherIDafter:  "<<motherIDafter  <<std::endl;
-// 	}
-
-// 	//get the flight distance from EvtGen somehow
-// 	//option 1) use (L*m)/(|p|*c)
-// 	//option 2) use t = gamma*tau
-// 	double gamma, tlab;
-
-// 	p4Evt = baseParticle->getP4Lab();
-// 	gamma = p4Evt.get(0)/baseParticle->mass();
-// 	tlab = gamma*baseParticle->getLifetime();
-
-
-// 	std::cout<<"Bmass: "<<baseParticle->mass()<<std::endl;
-// 	std::cout<<"energy: "<<p4Evt.get(0)<<std::endl;
-// 	std::cout<<"gamma: "<<gamma<<std::endl;
-// 	std::cout<<"t"<<baseParticle->getLifetime()<<std::endl;
-// 	std::cout<<"tlab"<<tlab<<std::endl;
-
-
-// 	parts[0]->setDecaytime(tlab);
-
-// 	while(!evtParts.empty()) {
-		
-// 		EvtParticle* theParticle = evtParts.front();
-
-// 		// // B0 and Bs may mix in EvtGen - RapidSim ignores this step and only records the second state
-// 		//if isBMixed?
-// 		while(theParticle->getNDaug()==1) {
-// 			theParticle = theParticle->getDaug(0);
-// 		}		
-	
-// 		uint nChildren = nExpectedChildren.front();
-// 		// Loop over the daughter tracks
-// 		for (uint iChild = 0; iChild < nChildren; ++iChild) {
-
-// 			EvtParticle* child = theParticle->getDaug(iChild);
-
-// 			if (child != 0) {
-// 				p4Evt = child->getP4Lab();
-// 				x4Evt = child->get4Pos();
-// 				p4TLV.SetPxPyPzE(p4Evt.get(1),p4Evt.get(2),p4Evt.get(3),p4Evt.get(0));
-// 				if(parts.size() < iPart+1u) {
-// 					std::cout << "WARNING in RapidExternalEvtGen::decay : EvtGen has produced too many particles." << std::endl;
-// 					return false;
-// 				}
-// 				parts[iPart]->setP(p4TLV);
-// 				parts[iPart]->getOriginVertex()->setXYZ(x4Evt.get(1),x4Evt.get(2),x4Evt.get(3));
-// 				parts[iPart]->setId(EvtPDL::getStdHep(child->getId()));
-// 				parts[iPart]->setDecaytime(child->getLifetime());
-// 				evtParts.push(child);
-// 				nExpectedChildren.push(parts[iPart]->nDaughters());
-// 				++iPart;
-// 			}
-// 		}
-// 		// Clean up any PHOTOS photons
-// 		for (uint iChild = nChildren; iChild < theParticle->getNDaug(); ++iChild) {
-// 			delete theParticle->getDaug(iChild);
-// 		}
-// 		delete theParticle;
-// 		evtParts.pop();
-// 		nExpectedChildren.pop();
-// 	}
-// 	return true;
-// #else
-// 	if(!suppressWarning_) {
-// 		std::cout << "WARNING in RapidExternalEvtGen::decay : EvtGen extension not compiled. Will not use EvtGen to decay " << parts[0]->name() << "." << std::endl;
-// 		suppressWarning_=true;
-// 	}
-
-// 	return false;
-// #endif
-// }
 
 bool RapidExternalEvtGen::setup() {
 #ifdef RAPID_EVTGEN
@@ -400,7 +242,7 @@ bool RapidExternalEvtGen::setupGenerator() {
 	}
 
 	int mixingType = EvtCPUtil::Incoherent;
-	// int mixingType = 1;
+	// int mixingType = EvtCPUtil::Coherent;
 
 	evtGen_ = new EvtGen(decPath.Data(), evtPDLPath.Data(), randomEngine,
 			radCorrEngine, &extraModels, mixingType);
@@ -427,6 +269,23 @@ void RapidExternalEvtGen::writeDecFile(TString fname, std::vector<RapidParticle*
 	} else {
 		fout << "noPhotos\n" << std::endl;
 	}
+	TString defString;
+	for(unsigned int iPart=0; iPart<parts.size(); ++iPart) {
+		if(parts[iPart]->evtGenDefinitions()){
+			defString = parts[iPart]->evtGenDefinitions();
+			TObjArray* tokens = defString.Tokenize(",");
+			for (int i = 0; i < tokens->GetEntries(); i++) {
+    			TString token = tokens->At(i)->GetName();
+    			token = token.Strip(TString::kBoth);  // removes leading and trailing whitespace
+    			std::cout << "INFO: Defining in DecFile: " << token << std::endl;
+				fout << "Define " << token << std::endl;
+			}
+			delete tokens;
+		}
+
+	}
+
+	fout << "\n" ;
 
 	// Loop over all particles and write out Decay rule for each
 	for(unsigned int iPart=0; iPart<parts.size(); ++iPart) {
@@ -477,73 +336,48 @@ TString RapidExternalEvtGen::getEvtGenConjName(int id) {
 #endif
 }
 
-bool RapidExternalEvtGen::isB0Mixed( EvtParticle* p )
-{
-	if ( !( p->getDaug(0) ) )
-        return false;
-
-    static EvtId B0 = EvtPDL::getId( "B0" );
-    static EvtId B0B = EvtPDL::getId( "anti-B0" );
- 
-    if ( ( p->getId() != B0 ) && ( p->getId() != B0B ) ){
-		
-        return false;
-	}
-
-    if ( ( p->getDaug(0)->getId() == B0 ) || ( p->getDaug(0)->getId() == B0B ) ){
-    	
-		return true;
-	}
-
-    return false;
-}
- 
-bool RapidExternalEvtGen::isBsMixed( EvtParticle* p )
-{
-
-	if ( !( p->getDaug(0) ) )
-        return false;
-
-    static EvtId BS0 = EvtPDL::getId( "B_s0" );
-    static EvtId BSB = EvtPDL::getId( "anti-B_s0" );
-
-    if ( ( p->getId() != BS0 ) && ( p->getId() != BSB ) )
-	{
-        return false;
-	}
-    if ( ( p->getDaug(0)->getId() == BS0 ) || ( p->getDaug(0)->getId() == BSB ) )
-	{
-        return true;
-	}
-    return false;
-}
-
 double RapidExternalEvtGen::calcFlightTime( FourVector& DecayVtx, FourVector& P4mtm )
 {
     double flightTime( 0.0 );
 
 #ifdef EVTGEN_HEPMC3
-    double distance = DecayVtx.length() * 1e-3;    // metres
-    double momentum = P4mtm.length();               // GeV/c
-	double PMass = P4mtm.m();
+    double distance = DecayVtx.length();    // mm
+    double momentum = P4mtm.length();       // GeV/c
+	double mass = P4mtm.m();
 #else
-    double distance = DecayVtx.rho() * 1e-3;    // metres
+    double distance = DecayVtx.rho();    // mm
     double momentum = P4mtm.rho();  
-	double PMass = P4mtm.m();
+	double mass = P4mtm.m();
 #endif
-	// std::cout<<"mass: "<<PMass<<std::endl;
-	// std::cout<<"energy: "<<P4mtm.e()<<std::endl;
-	// std::cout<<"distance: "<<distance<<std::endl;
-	// std::cout<<"momentum: "<<momentum<<std::endl;
-	// std::cout<<"gamma: "<<P4mtm.e()/PMass<<std::endl;
 
-    
-    double c0 = 299792458.0;    // m/s
-	
+	double c0 = EvtConst::c ;//mm/s
     if ( momentum > 0.0 ) {
-        flightTime = 1.0e12 * distance * PMass /
+        flightTime = 1.0e12 * distance * mass /
                      ( momentum * c0 );    // picoseconds
     }
 
-    return flightTime;
+	return flightTime;
 }
+	// std::cout<<"DecayVtx.t(): "<<DecayVtx.t()<<std::endl;
+	// std::cout<<"DecayVtx.x(): "<<DecayVtx.x()<<std::endl;
+    // std::cout<<"DecayVtx.y(): "<<DecayVtx.y()<<std::endl;
+    // std::cout<<"DecayVtx.z(): "<<DecayVtx.z()<<std::endl;
+
+
+	// std::cout<<"mass: "<<mass<<std::endl;
+	// std::cout<<"E: "<<P4mtm.e()<<std::endl;
+    // std::cout<<""<<std::endl;
+    // std::cout<<"px: "<<P4mtm.px()<<std::endl;
+    // std::cout<<"py: "<<P4mtm.py()<<std::endl;
+    // std::cout<<"pz: "<<P4mtm.pz()<<std::endl;
+    // std::cout<<""<<std::endl;
+    // std::cout<<"x: "<<P4mtm.x()<<std::endl;
+    // std::cout<<"y: "<<P4mtm.y()<<std::endl;
+    // std::cout<<"z: "<<P4mtm.z()<<std::endl;
+    // std::cout<<""<<std::endl;
+	// std::cout<<"distance: "<<distance<<std::endl;
+	// std::cout<<"momentum: "<<momentum<<std::endl;
+	// std::cout<<"gamma: "<<P4mtm.e()/mass<<std::endl;
+    // std::cout<<""<<std::endl;
+
+    // std::cout<<"flightTime:         "<<flightTime<<std::endl;
