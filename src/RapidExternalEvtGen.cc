@@ -37,9 +37,7 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 		return false;
 	}
 
-	// EvtParticle* baseParticle(0);
 	EvtSpinDensity* spinDensity = 0;
-	// std::cout<<"parts[0]->id():   "<<parts[0]->id()<<std::endl; //RapSim itself generates both B and Bbar flavours when EvtCPUtil is called within the model ??
 	TString parentName = getEvtGenName(parts[0]->id());
 	EvtId theId = EvtPDL::evtIdFromLundKC(parts[0]->id());
 
@@ -75,7 +73,6 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
         evtGen_->generateDecay( PDGId, pInit, origin, spinDensity );	
 	// Retrieve the HepMC event information
     GenEvent* hepMCEvent = theEvent->getEvent();
-    // theEvent->print();
 
 	std::list<GenVertexPtr> allVertices;
 	
@@ -90,6 +87,9 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 	FourVector DecayVtx;
 	FourVector OrigVtx;
 
+	std::queue<int> nExpectedChildren;
+	nExpectedChildren.push(parts[0]->nDaughters());
+
 	for ( auto theVertex : hepMCEvent->vertices() ) {
 		if ( theVertex == 0 ) {
 		    continue;
@@ -97,85 +97,74 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 		auto nin  = theVertex->particles_in_size();
 		auto nout = theVertex->particles_out_size();
 
-		if(nin==1 && nout ==1){
-
-			auto inParticle  = theVertex->particles_in()[0];
-			auto outParticle = theVertex->particles_out()[0];
-			if ( inParticle == 0 ) {
-        	    continue;
-        	}
-			int inPDGId = inParticle->pdg_id();
-			int outPDGId = outParticle->pdg_id();
-
-			if ( inPDGId == B0Id || inPDGId == BsId || inPDGId == B0barId || inPDGId == BsbarId ) {
-
-				
-				if (outPDGId!=inPDGId){
-					hasOsc=true;
-					// std::cout<<""<<std::endl;
-					// std::cout<<" HAS OSCILLATED in nin==1 and nout==1 "<<std::endl;
-					// std::cout<<" inPDGId: "<<inPDGId<<std::endl;
-					// std::cout<<" outPDGId: "<<outPDGId<<std::endl;
-					// std::cout<<""<<std::endl;
-				}
-				else{
-					hasOsc=false;
-					// std::cout<<""<<std::endl;
-					// std::cout<<" HASN'T OSCILLATED "<<std::endl;
-					// std::cout<<" inPDGId: "<<inPDGId<<std::endl;
-					// std::cout<<" outPDGId: "<<outPDGId<<std::endl;
-					// std::cout<<""<<std::endl;
-				}
-
-				parts[iVtx]->setHasOsc(hasOsc);
-				
-			}
-
+		while (nin == 1 && nout ==1){
+			//B meson oscillation
 			continue;
-			
 		}
-		else if(nin==1 && nout > 1){
-			// For these, get the mother decay vertex position and the 4-momentum to calculate
-			// the flight time.
 
-			for ( auto inParticle : theVertex->particles_in() ) {
+		uint nChildren = nExpectedChildren.front();
+
+		// For these, get the mother decay vertex position and the 4-momentum to calculate
+		// the flight time.
+
+		for ( auto inParticle : theVertex->particles_in() ) {
+
         		if ( inParticle == 0 ) {
         	    	continue;
         		}
 
+				int inPDGId = inParticle->pdg_id();
 				FourMom = inParticle->momentum();
 				DecayVtx = theVertex->position();
-				int inPDGId = inParticle->pdg_id();
-				if(iVtx==0){
-					flightTime = calcFlightTime( DecayVtx, FourMom );
-					parts[iVtx]->setId(inPDGId);
-					parts[iVtx]->setDecaytime(flightTime);
-					parts[iVtx]->getDecayVertex()->setXYZ(DecayVtx.x(), DecayVtx.y(), DecayVtx.x());
-				}
+
+				if ( inPDGId == B0Id || inPDGId == BsId || inPDGId == B0barId || inPDGId == BsbarId ) {
+
+					if (PDGId!=inPDGId){
+						hasOsc=true;
+					}
+					else{
+						hasOsc=false;
+
+					}
+
+					parts[iVtx]->setHasOsc(hasOsc);
+					
+				}				
+
+				flightTime = calcFlightTime( DecayVtx, FourMom );
+				parts[iVtx]->setId(inPDGId);
+				parts[iVtx]->setDecaytime(flightTime);
+				parts[iVtx]->getDecayVertex()->setXYZ(DecayVtx.x(), DecayVtx.y(), DecayVtx.x());
 							
-       		}  
+		}  
 
-			for ( auto outParticle : theVertex->particles_out() ) {
+		uint nRecorded(0);
+		for ( auto outParticle : theVertex->particles_out() ) {
 			
-				if(outParticle->pdg_id() != 22){//discard PHOTOS info this needs thought as one might want to simulate photons
-					
-					FourMom = outParticle->momentum();
-					OrigVtx = theVertex->position();
+			if (nRecorded < nChildren) {
 
-					p4TLV.SetPxPyPzE(FourMom.px(),FourMom.py(),FourMom.pz(),FourMom.e());
+				FourMom = outParticle->momentum();
+				OrigVtx = theVertex->position();
 
-					parts[iPart]->setP(p4TLV);
+				p4TLV.SetPxPyPzE(FourMom.px(),FourMom.py(),FourMom.pz(),FourMom.e());
 
-					parts[iPart]->getOriginVertex()->setXYZ(OrigVtx.x(),OrigVtx.y(),OrigVtx.z());
-					parts[iPart]->setId(outParticle->pdg_id());
+				parts[iPart]->setP(p4TLV);
 
-					++iPart;
-					
-				}
+				parts[iPart]->getOriginVertex()->setXYZ(OrigVtx.x(),OrigVtx.y(),OrigVtx.z());
+				parts[iPart]->setId(outParticle->pdg_id());
+
+				nExpectedChildren.push(parts[iPart]->nDaughters());
+
+				++iPart;
+
 			}
-			++iVtx;
-			// std::cout<<"Vtx number: "<<iVtx<<std::endl;
+			++nRecorded;
+			
 		}
+		nExpectedChildren.pop();
+		++iVtx;
+		// std::cout<<"Vtx number: "<<iVtx<<std::endl;
+		// }
 	}
 
 	delete hepMCEvent;
