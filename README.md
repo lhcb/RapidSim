@@ -27,6 +27,7 @@ To run a decay (validation files live in the source tree):
 ```shell
 $ pixi run -- .build/src/RapidSim.exe validation/Bs2Jpsiphi 10000 1
 ```
+If the max event to save/select is specified and >0, the generation will be stopped early if this number is reached.
 
 For an interactive shell with ROOT, EvtGen and the compiler toolchain on the
 PATH:
@@ -308,6 +309,10 @@ EvtGen may be used to generate decays allowing for non-phasespace decay models.
  * Greig Cowan 2015
  * Dan Craik 2016
  * Matt Needham 2015
+
+## Additional contributions
+
+ * Léa Dreyfus 2025
 
 [tgenphasespace]: https://root.cern.ch/doc/master/classTGenPhaseSpace.html
 [fonll]: http://cacciari.web.cern.ch/cacciari/fonll/
