@@ -9,6 +9,7 @@
 #include "RooRealVar.h"
 
 class RooRelBreitWigner;
+class RooSubThreshold;
 class RooGounarisSakurai;
 class RapidParticle;
 
@@ -16,6 +17,7 @@ class RapidParticleData {
 	public:
 		enum ResLineShape {
 			RelBW,
+			SubTh,
 			GS
 		};
 
@@ -71,7 +73,8 @@ class RapidParticleData {
 		TString makeUniqName(TString name);
 
 		RooRelBreitWigner* makeRelBW(RooRealVar& m, double mean, double gamma, double thespin, double m1, double m2, TString name);
-		RooGounarisSakurai* makeGS(RooRealVar& m, double mean, double gamma, double thespin, double m1, double m2, TString name);
+		RooSubThreshold* makeSubTh(RooRealVar& m, double mean, double gamma, double thespin, double m1, double m2, double m3, double mPar, TString name);
+  	RooGounarisSakurai* makeGS(RooRealVar& m, double mean, double gamma, double thespin, double m1, double m2, TString name);
 
 		std::map<int, double> idToCT_;
 		std::map<int, double> idToMass_;
