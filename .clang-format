@@ -1,0 +1,172 @@
+Language: Cpp
+AccessModifierOffset: -2
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: Consecutive
+AlignConsecutiveDeclarations: None
+AlignEscapedNewlines: Left
+AlignOperands: AlignAfterOperator
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+BinPackParameters: true
+BitFieldColonSpacing: Both
+BraceWrapping:
+  AfterCaseLabel:        false
+  AfterClass:            false
+  AfterControlStatement: Never
+  AfterEnum:             true
+  AfterFunction:         true
+  AfterNamespace:        false
+  AfterStruct:           false
+  AfterUnion:            false
+  AfterExternBlock:      false
+  BeforeCatch:           false
+  BeforeElse:            false
+  BeforeLambdaBody:      true
+  BeforeWhile:           false
+  IndentBraces:          false
+  SplitEmptyFunction:    true
+  SplitEmptyRecord:      true
+  SplitEmptyNamespace:   true
+BreakAfterAttributes: Leave
+BreakArrays: false
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Custom
+BreakBeforeConceptDeclarations: Always
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
+BreakStringLiterals: false
+ColumnLimit: 80
+CommentPragmas: '^ IWYU pragma:'
+CompactNamespaces: false
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+DisableFormat: false
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Always
+ExperimentalAutoDetectBinPacking: false
+FixNamespaceComments: true
+ForEachMacros:
+  - foreach
+  - BOOST_FOREACH
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^"(test|variable)'
+    Priority:        1
+  - Regex:           '^"EvtGen/'
+    Priority:        2
+  - Regex:           '^"EvtGenBase/'
+    Priority:        3
+  - Regex:           '^"EvtGenModels/'
+    Priority:        4
+  - Regex:           '^"EvtGenExternal/'
+    Priority:        5
+  - Regex:           '^"(HepMC|HepMC3)/'
+    Priority:        6
+  - Regex:           '^"(Pythia8|Photos|Tauola|SHERPA|ATOOLS|PHOTONS\+\+)/'
+    Priority:        7
+  - Regex:           '^"T[[:alnum:]]+\.h"'
+    Priority:        8
+  - Regex:           '^<[[:alnum:]_]+>'
+    Priority:        10
+  - Regex:           '^<[[:alnum:]_]+\.h>'
+    Priority:        11
+  - Regex:           '.*'
+    Priority:        9
+IncludeIsMainRegex: '(Test)?$'
+IncludeIsMainSourceRegex: '(Impl\.hh)$'
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: Indent
+IndentGotoLabels: true
+IndentPPDirectives: None
+IndentRequiresClause: false
+IndentWidth: 4
+IndentWrappedFunctionNames: false
+InsertBraces: false
+InsertNewlineAtEOF: true
+IntegerLiteralSeparator:
+  Binary: 0
+  Decimal: 0
+  Hex: 0
+KeepEmptyLinesAtTheStartOfBlocks: false
+LambdaBodyIndentation: Signature
+LineEnding: LF
+MacroBlockBegin: ''
+MacroBlockEnd:   ''
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: All
+PPIndentWidth: 0
+PackConstructorInitializers: NextLine
+PenaltyBreakAssignment: 50
+PenaltyBreakBeforeFirstCallParameter: 50
+PenaltyBreakComment: 250
+PenaltyBreakFirstLessLess: 100
+PenaltyBreakOpenParenthesis: 0
+PenaltyBreakString: 1000
+PenaltyBreakTemplateDeclaration: 1
+PenaltyExcessCharacter: 10
+PenaltyIndentedWhitespace: 0
+PenaltyReturnTypeOnItsOwnLine: 250
+PointerAlignment: Left
+QualifierAlignment: Left
+ReferenceAlignment: Pointer
+ReflowComments: false
+RemoveBracesLLVM: false
+RemoveSemicolon: false
+RequiresClausePosition: OwnLine
+RequiresExpressionIndentation: OuterScope
+SeparateDefinitionBlocks: Leave
+ShortNamespaceLines: 0
+SortIncludes: CaseSensitive
+SortUsingDeclarations: Lexicographic
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 4
+SpacesInAngles: Never
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: true
+SpacesInContainerLiterals: true
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: 1
+SpacesInParentheses: true
+SpacesInSquareBrackets: false
+Standard: Latest
+StatementMacros:
+  - ClassDef
+  - ClassImp
+TabWidth: 4
+UseTab: Never
