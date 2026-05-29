@@ -330,3 +330,74 @@ EvtGen may be used to generate decays allowing for non-phasespace decay models.
 [fonll]: http://cacciari.web.cern.ch/cacciari/fonll/
 [fonll_dir]: rootfiles/fonll
 [particles_file]: config/particles.dat
+
+
+some instructions:
+
+
+alias LCG107="source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_107 x86_64-el9-clang16-opt"
+load-rs-custom-evtgen() { export RAPIDSIM_ROOT=/vols/lhcb/dl225/rs/install && export EVTGEN_ROOT=/vols/lhcb/dl225/evtgen_3/install/share/EvtGen; }
+# 1 is path to config, 2 is number of events 3 should be 1 to save tree otherwise 0
+RapSim() { $RAPIDSIM_ROOT/bin/RapidSim.exe "$1" "$2" "$3"; }
+
+_________________________________________
+
+EvtGen installation from source
+_________________________________________
+
+
+
+mkdir evtgen && cd evtgen
+
+git clone -b myEvtGenBranch ssh://git@gitlab.cern.ch:7999/evtgen/evtgen.git;
+
+export INSTALL_PREFIX="${PWD}"
+
+mkdir build && cd build
+
+cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=$BASEDIR/install -DEVTGEN_HEPMC3:BOOL=ON -DEVTGEN_PYTHIA:BOOL=ON -DEVTGEN_PHOTOS:BOOL=ON -DEVTGEN_TAUOLA:BOOL=ON -DEVTGEN_BUILD_TESTS:BOOL=ON -DEVTGEN_BUILD_VALIDATIONS:BOOL=ON -DEVTGEN_BUILD_DOXYGEN:BOOL=ON $BASEDIR/evtgen;
+make -j 6; make install
+
+
+#export LCG=/cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-clang16-opt
+#
+#mkdir $INSTALL_PREFIX/evtgen/build
+#cd $INSTALL_PREFIX/evtgen/build
+#cmake -DCMAKE_BUILD_TYPE=Release \
+#-DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX/install \
+#-DCMAKE_PREFIX_PATH=$LCG \
+#  -DEVTGEN_HEPMC3=ON \
+#  -DEVTGEN_PHOTOS=ON \
+#  -DEVTGEN_PYTHIA=ON \
+#  -DEVTGEN_TAUOLA=ON \
+#  -DEVTGEN_BUILD_TESTS=ON \
+#  -DEVTGEN_BUILD_VALIDATIONS=ON \
+# -DHEPMC3_ROOT_DIR=$LCG \
+# -DPythia8_ROOT_DIR=$LCG \
+# -DPhotospp_ROOT_DIR=$LCG \
+# -DTauola_ROOT_DIR=$LCG ..
+
+#make
+#make install
+
+_________________________________________
+RAPIDSIM INSTALLATION WITH CUSTOM EVTGEN
+_________________________________________
+
+LCG107
+
+cd rs
+export BASEDIR=$PWD
+export EVTGEN_ROOT=/vols/lhcb/dl225/evtgen_3/install
+git clone https://github.com/dlanci/RapidSim
+mkdir install
+mkdir RapidSim/build
+
+cd RapidSim/build
+cmake -DCMAKE_INSTALL_PREFIX=$BASEDIR/install -DEvtGen_DIR=$EVTGEN_ROOT/share/EvtGen/cmake -DCMAKE_VERBOSE_MAKEFILE=ON  ..
+
+make install
+
+
+# check which evtgen:
+ldd $RAPIDSIM_ROOT/bin/RapidSim.exe | grep EvtGen
