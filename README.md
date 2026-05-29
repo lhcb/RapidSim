@@ -351,7 +351,7 @@ mkdir evtgen && cd evtgen
 
 git clone -b myEvtGenBranch ssh://git@gitlab.cern.ch:7999/evtgen/evtgen.git;
 
-export INSTALL_PREFIX="${PWD}"
+export BASEDIR="${PWD}"
 
 mkdir build && cd build
 

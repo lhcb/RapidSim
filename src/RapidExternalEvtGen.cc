@@ -68,6 +68,8 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 	// Parent particle 4-momentum
 	TLorentzVector pIn = parts[0]->getP();
 	EvtVector4R pInit(pIn.E(),pIn.Px(),pIn.Py(),pIn.Pz());
+	// double mass = EvtPDL::getMeanMass( theId );
+	// EvtVector4R pInit(mass,0.0, 0.0, 0.0);
 
     EvtHepMCEvent* theEvent =
         evtGen_->generateDecay( PDGId, pInit, origin, spinDensity );	
@@ -147,6 +149,12 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 				OrigVtx = theVertex->position();
 
 				p4TLV.SetPxPyPzE(FourMom.px(),FourMom.py(),FourMom.pz(),FourMom.e());
+
+				std::cout<<"ID:"<<outParticle->pdg_id()<<std::endl;
+				std::cout<<"px: "<<FourMom.px()<<std::endl;
+				std::cout<<"py: "<<FourMom.py()<<std::endl;
+				std::cout<<"pz: "<<FourMom.pz()<<std::endl;
+				std::cout<<""<<std::endl;
 
 				parts[iPart]->setP(p4TLV);
 
@@ -254,9 +262,9 @@ void RapidExternalEvtGen::writeDecFile(TString fname, std::vector<RapidParticle*
 	fout.open(decFileName_, std::ofstream::out);
 
 	if(usePhotos) {
-		fout << "yesPhotos\n" << std::endl;
+		fout << "yesFSR\n" << std::endl;
 	} else {
-		fout << "noPhotos\n" << std::endl;
+		fout << "noFSR\n" << std::endl;
 	}
 	TString defString;
 	for(unsigned int iPart=0; iPart<parts.size(); ++iPart) {
