@@ -1,15 +1,21 @@
-
 file(GLOB RapidSim_sources ${PROJECT_SOURCE_DIR}/src/*.cc)
 
-ADD_EXECUTABLE ( RapidSim.exe ${RapidSim_sources} ${PROJECT_SOURCE_DIR}/src/RapidSim.C )
+add_executable(RapidSim.exe
+  ${RapidSim_sources}
+  ${PROJECT_SOURCE_DIR}/src/RapidSim.C
+)
 
 if(EvtGen_FOUND)
-  TARGET_LINK_LIBRARIES( RapidSim.exe ${ROOT_LIBRARIES} ${EVTGEN} ${EVTGENEXT} )
-ELSE()
-  TARGET_LINK_LIBRARIES( RapidSim.exe ${ROOT_LIBRARIES} )
-ENDIF()
+  target_compile_definitions(RapidSim.exe PRIVATE RAPID_EVTGEN)
+  target_link_libraries(RapidSim.exe PRIVATE ${ROOT_LIBRARIES} ${EVTGEN} ${EVTGENEXT})
 
-# install target
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    target_link_options(RapidSim.exe PRIVATE "LINKER:-undefined,dynamic_lookup")
+  else()
+    target_link_options(RapidSim.exe PRIVATE "LINKER:--unresolved-symbols=ignore-in-shared-libs")
+  endif()
+else()
+  target_link_libraries(RapidSim.exe PRIVATE ${ROOT_LIBRARIES})
+endif()
 
 install(TARGETS RapidSim.exe DESTINATION ${CMAKE_INSTALL_BINDIR} RUNTIME DESTINATION bin)
-
