@@ -439,6 +439,9 @@ bool RapidConfig::configParticle(unsigned int part, TString command, TString val
 		parts_[part]->setEvtGenDecayModel(value);
 		std::cout << "INFO in RapidConfig::configParticle : set EvtGen decay model for particle " << parts_[part]->name() << std::endl
 			  << "                                    : " << value << std::endl;
+	} else if(command=="Define"){
+		std::cout<<"Define: "<<value<<std::endl;
+		parts_[part]->setEvtGenDefinitions(value);
 	}
 
 	return true;

@@ -15,6 +15,9 @@ RapidParticleData* RapidParticleData::getInstance() {
 	if(!instance_) {
 		instance_ = new RapidParticleData();
 		TString path;
+                path=getenv("RAPIDSIM_PARTICLE_TABLE");
+                if(path!="") instance_->loadData(path);
+
 		path=getenv("RAPIDSIM_CONFIG");
 		if(path!="") instance_->loadData(path+"/config/particles.dat");
 
@@ -215,6 +218,7 @@ void RapidParticleData::addEntry(int id, TString name, double mass, double width
 	if(idToName_.find(id) != idToName_.end()) {
 		std::cout << "INFO in RapidParticleData::addEntry : particle with ID " << id << " already defined with name " << idToName_[id] << std::endl;
 		std::cout << "                                      second definition will be ignored." << std::endl;
+          return;
 	}
 
 	idToCT_[id] = ctau;

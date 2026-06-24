@@ -48,6 +48,9 @@ class RapidParam {
 			OrigX,    // x coordinate of origin vertex
 			OrigY,    // y coordinate of origin vertex
 			OrigZ,    // z coordinate of origin vertex
+			ID,       // TRUE ID of the particle
+			hasOsc,   // whether the particle has oscillated before decay
+			decaytime, // decaytime of the particle
 			UNKNOWN   //unused
 
 		};
@@ -101,6 +104,8 @@ class RapidParam {
 		double evalCorrectedMass();
 		double evalTheta();
 		double evalPID();
+		// double evalID();
+		// double evalDecayTime();
 		double evalPos();
 
 		void setDefaultMinMax() {setDefaultMinMax(particles_,minVal_,maxVal_);}//TODO remove/make virtual and give a warning in the base class

@@ -99,6 +99,8 @@ class RapidConfig {
 		//Vtx smearing lookup for each smearing category, placeholder for now
 		//std::map<TString, RapidVtxSmear*> vtxSmearCategories_;
 
+		// std::vector<std::map<TString, double>> definitions_;
+		std::vector<TString> definitions_;
 		//accept reject hist to sculpt kinematics
 		TH1* accRejHisto_;
 		RapidParam* accRejParameterX_;
