@@ -93,10 +93,11 @@ class RapidParam {
 		void getMinMax(double& min, double& max, bool recalculate=false);
 
 		//force alternative mass hypotheses for some of the particles in this parameter
-		//one (sanitised) hypothesis name per particle, empty string means nominal mass
-		void setMassHypotheses(const std::vector<TString>& hypNames) { hypNames_ = hypNames; }
+		//one (sanitised) hypothesis name and mass per particle, empty string / negative mass means nominal mass
+		//the hypotheses only affect this parameter, no altMass is needed on the particles
+		void setMassHypotheses(const std::vector<TString>& hypNames, const std::vector<double>& hypMasses) { hypNames_ = hypNames; hypMasses_ = hypMasses; }
 		bool hasMassHypotheses();
-		//look up the masses of the requested hypotheses - must be called once all particles are configured
+		//report the requested hypotheses and update the histogram range - called once all particles are configured
 		bool resolveMassHypotheses();
 
 		//convenience functions for 1, 2 or 3-body parameters

@@ -90,7 +90,7 @@ bool RapidConfig::load(TString fileName) {
 	if(!loadDecay()) return false;
 	if(!loadConfig()) return false;
 
-	//alternative mass hypotheses used in parameters can only be looked up once all particles are configured
+	//alternative mass hypotheses used in parameters: the histogram ranges depend on the particle masses, so set them once all particles are configured
 	for(unsigned int i=0; i<params_.size(); ++i) {
 		if(!params_[i]->resolveMassHypotheses()) {
 			std::cout << "ERROR in RapidConfig::load : failed to set up mass hypotheses for parameter " << params_[i]->name() << "." << std::endl
@@ -619,6 +619,7 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 	bool truth = false;
 	std::vector<RapidParticle*> partlist;
 	std::vector<TString> hypNames;
+	std::vector<double> hypMasses; //negative means nominal mass
 	paramStr.Tokenize(name,from," ");
 	paramStr.Tokenize(buffer,from," ");
 	type = RapidParam::typeFromString(buffer);
@@ -626,6 +627,7 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 	while(paramStr.Tokenize(buffer,from," ")) {
 		//a particle index may be followed by an alternative mass hypothesis, e.g. 2{pi-}
 		TString hypName("");
+		double hypMass(-1.);
 		Ssiz_t brace = buffer.Index("{");
 		if(brace>0 && buffer.EndsWith("}")) {
 			TString hypStr = buffer(brace+1, buffer.Length()-brace-2);
@@ -638,6 +640,9 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 				return 0;
 			}
 			hypName = rpd->getSanitisedName(hypId);
+			//the mass is taken directly from particles.dat: the hypothesis only applies to this parameter
+			//and does not need to be added to the particle with altMass
+			hypMass = rpd->getMass(hypId);
 		}
 		if(buffer.IsDec()) {
 			unsigned int index = buffer.Atoi();
@@ -648,6 +653,7 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 			} else {
 				partlist.push_back(parts_[index]);
 				hypNames.push_back(hypName);
+				hypMasses.push_back(hypMass);
 			}
 		} else if(buffer=="TRUE") {
 			truth = true;
@@ -664,7 +670,7 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 	}
 
 	RapidParam * param = new RapidParam(name, type, partlist, truth);
-	param->setMassHypotheses(hypNames);
+	param->setMassHypotheses(hypNames, hypMasses);
 
 	if(param->hasMassHypotheses() &&
 	   (type == RapidParam::ProbNNmu || type == RapidParam::ProbNNe || type == RapidParam::ProbNNpi ||

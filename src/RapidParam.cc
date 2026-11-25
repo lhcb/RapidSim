@@ -551,20 +551,14 @@ bool RapidParam::hasMassHypotheses() {
 }
 
 bool RapidParam::resolveMassHypotheses() {
-	hypMasses_.clear();
 	if(!hasMassHypotheses()) return true;
 
+	//the masses were already taken from particles.dat when the parameter was configured (RapidConfig::loadParam)
+	//so the particles do not need the hypothesis added with altMass
 	for(unsigned int i=0; i<particles_.size(); ++i) {
-		double mass(-1.);
 		if(hypNames_[i] != "") {
-			if(!particles_[i]->getAltMass(hypNames_[i], mass)) {
-				std::cout << "ERROR in RapidParam::resolveMassHypotheses : particle " << particles_[i]->name() << " has no alternative mass hypothesis " << hypNames_[i] << "." << std::endl
-					  << "                                            add it to the particle with altMass to use it in parameter " << name() << "." << std::endl;
-				return false;
-			}
-			std::cout << "INFO in RapidParam::resolveMassHypotheses : parameter " << name() << " will use the " << hypNames_[i] << " mass hypothesis for particle " << particles_[i]->name() << "." << std::endl;
+			std::cout << "INFO in RapidParam::resolveMassHypotheses : parameter " << name() << " will use the " << hypNames_[i] << " mass hypothesis (" << hypMasses_[i] << " GeV) for particle " << particles_[i]->name() << "." << std::endl;
 		}
-		hypMasses_.push_back(mass);
 	}
 
 	//the histogram range depends on the masses used
