@@ -166,7 +166,16 @@ Particle settings should be defined after the corresponding `@#` tag using the s
     * `<particles>` is a space separated list of particle indices
     * The optional `TRUE` argument means the parameter will be calculated using 
       the true unsmeared momenta of the particles
+    * Any particle index may be followed by `{<type>}` to calculate the parameter 
+      with that particle in an alternative mass hypothesis (its 3-momentum is kept 
+      and its energy recalculated, using the mass from [`config/particles.dat`][particles_file]). 
+      The hypothesis only applies to this parameter: it does not need to be added to the 
+      particle with [`altMass`](#particle-settings), so no extra mis-identification 
+      parameters are created. Such parameters can be used in cuts, e.g. to 
+      cut on a mass calculated with a mis-identified particle at generation level
+    * Alternative mass hypotheses are not supported for PID or vertex position parameters
   * Example: `param : mSq12 M2 1 2 TRUE`
+  * Example: `param : mB_Kpi M 1 2{pi-} 3 4`
 
 * `cut`:
   * Applies a cut on a given parameter
@@ -236,6 +245,9 @@ Particle settings should be defined after the corresponding `@#` tag using the s
   * If alternative hypotheses are defined for multiple particles then 
     parameters will be calculated for all combinations of one or two 
     mis-identifications
+  * To cut on a single parameter in an alternative mass hypothesis, without creating 
+    all the combinations above, do not use `altMass` and instead define the parameter 
+    with `param` using the `<index>{<type>}` syntax
 
 * `evtGenModel` :
   * Sets the decay model to be used if this particle is decayed using EvtGen

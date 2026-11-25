@@ -124,6 +124,17 @@ TString RapidParticle::massHypothesisName() {
 	else return massHypothesisNames_[currentHypothesis_-1];
 }
 
+bool RapidParticle::getAltMass(TString name, double& mass) {
+	//look up an alternative mass hypothesis (added with altMass) by its sanitised name
+	for(unsigned int i=0; i<massHypothesisNames_.size(); ++i) {
+		if(massHypothesisNames_[i] == name) {
+			mass = altMasses_[i];
+			return true;
+		}
+	}
+	return false;
+}
+
 bool RapidParticle::hasFlavour(int flavour) {
 	int id = TMath::Abs(id_);
 
