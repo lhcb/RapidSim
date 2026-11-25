@@ -20,16 +20,12 @@ double RapidParam::eval() {
 	double ipSigma = particles_[0]->getSigmaIP();
 	double minipSigma = particles_[0]->getSigmaMinIP();
 	mom_.SetPxPyPzE(0.,0.,0.,0.);
-	if(truth_) {
-		for(unsigned int i=0; i<particles_.size(); ++i) {
-			mom_ += particles_[i]->getP();
-		}
-	} else {
+	if(!truth_) {
 		ip = particles_[0]->getIPSmeared();
 		minip = particles_[0]->getMinIPSmeared();
-		for(unsigned int i=0; i<particles_.size(); ++i) {
-			mom_ += particles_[i]->getPSmeared();
-		}
+	}
+	for(unsigned int i=0; i<particles_.size(); ++i) {
+		mom_ += getMomentum(i, truth_);
 	}
 
 	switch(type_) {
@@ -280,9 +276,10 @@ double RapidParam::evalCorrectedMass() {
 	TLorentzVector momS, momT;
 
 	//load the true (inc. invisible) and smeared momenta
+	//the true momentum defines the flight direction, so it always uses the nominal masses
 	for(unsigned int i=0; i<particles_.size(); ++i) {
 		momT += particles_[i]->getP();
-		momS += particles_[i]->getPSmeared();
+		momS += getMomentum(i, false);
 	}
 
 	//get the sine and cosine of the angle to the B flight direction with a Gaussian smearing applied
@@ -314,20 +311,11 @@ double RapidParam::evalTheta() {
 	TLorentzVector pA, pB, pBoost;
 	bool doBoost(false);
 
-	if(truth_) {
-		pA = particles_[0]->getP();
-		pB = particles_[1]->getP();
-		for(unsigned int i=2; i<particles_.size(); ++i) {
-			pBoost += particles_[i]->getP();
-			doBoost=true;
-		}
-	} else {
-		pA = particles_[0]->getPSmeared();
-		pB = particles_[1]->getPSmeared();
-		for(unsigned int i=2; i<particles_.size(); ++i) {
-			pBoost += particles_[i]->getPSmeared();
-			doBoost=true;
-		}
+	pA = getMomentum(0, truth_);
+	pB = getMomentum(1, truth_);
+	for(unsigned int i=2; i<particles_.size(); ++i) {
+		pBoost += getMomentum(i, truth_);
+		doBoost=true;
 	}
 
 	if(doBoost) {
@@ -551,6 +539,79 @@ void RapidParam::getMinMax(double& min, double& max, bool recalculate) {
 		max = maxVal_;
 	} else {
 		setDefaultMinMax(particles_,min,max);
+		addForcedMassShifts(min,max);
+	}
+}
+
+bool RapidParam::hasMassHypotheses() {
+	for(unsigned int i=0; i<hypNames_.size(); ++i) {
+		if(hypNames_[i] != "") return true;
+	}
+	return false;
+}
+
+bool RapidParam::resolveMassHypotheses() {
+	hypMasses_.clear();
+	if(!hasMassHypotheses()) return true;
+
+	for(unsigned int i=0; i<particles_.size(); ++i) {
+		double mass(-1.);
+		if(hypNames_[i] != "") {
+			if(!particles_[i]->getAltMass(hypNames_[i], mass)) {
+				std::cout << "ERROR in RapidParam::resolveMassHypotheses : particle " << particles_[i]->name() << " has no alternative mass hypothesis " << hypNames_[i] << "." << std::endl
+					  << "                                            add it to the particle with altMass to use it in parameter " << name() << "." << std::endl;
+				return false;
+			}
+			std::cout << "INFO in RapidParam::resolveMassHypotheses : parameter " << name() << " will use the " << hypNames_[i] << " mass hypothesis for particle " << particles_[i]->name() << "." << std::endl;
+		}
+		hypMasses_.push_back(mass);
+	}
+
+	//the histogram range depends on the masses used
+	setDefaultMinMax();
+
+	return true;
+}
+
+TLorentzVector RapidParam::getMomentum(unsigned int i, bool truth) {
+	TLorentzVector mom;
+	if(truth) mom = particles_[i]->getP();
+	else      mom = particles_[i]->getPSmeared();
+
+	//keep the 3-momentum and recompute the energy with the alternative mass
+	if(i < hypMasses_.size() && hypMasses_[i] >= 0.) {
+		mom.SetXYZM(mom.Px(), mom.Py(), mom.Pz(), hypMasses_[i]);
+	}
+	return mom;
+}
+
+void RapidParam::addForcedMassShifts(double& min, double& max) {
+	if(type_ != RapidParam::M && type_ != RapidParam::M2 && type_ != RapidParam::MT && type_ != RapidParam::MCORR) return;
+
+	double deltaDown(0.), deltaUp(0.);
+	for(unsigned int i=0; i<hypMasses_.size(); ++i) {
+		if(hypMasses_[i] < 0.) continue;
+		double delta = hypMasses_[i] - particles_[i]->mass();
+		if(delta < 0.) deltaDown += delta;
+		else           deltaUp   += delta;
+	}
+
+	//as in setMassMinMax, the factor of 2. is arbitrary
+	if(type_ == RapidParam::M2) {
+		//min and max are already squared
+		double sqrtMin = TMath::Sqrt(TMath::Max(min,0.)) + 2.*deltaDown;
+		double sqrtMax = TMath::Sqrt(TMath::Max(max,0.)) + 2.*deltaUp;
+		if(sqrtMin < 0.) sqrtMin = 0.;
+		min = sqrtMin*sqrtMin;
+		max = sqrtMax*sqrtMax;
+	} else if(type_ == RapidParam::MCORR) {
+		//min is set to -max for the corrected mass
+		max += 2.*deltaUp;
+		min = -max;
+	} else {
+		min += 2.*deltaDown;
+		max += 2.*deltaUp;
+		if(min < 0.) min = 0.;
 	}
 }
 

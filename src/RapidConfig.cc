@@ -90,6 +90,15 @@ bool RapidConfig::load(TString fileName) {
 	if(!loadDecay()) return false;
 	if(!loadConfig()) return false;
 
+	//alternative mass hypotheses used in parameters can only be looked up once all particles are configured
+	for(unsigned int i=0; i<params_.size(); ++i) {
+		if(!params_[i]->resolveMassHypotheses()) {
+			std::cout << "ERROR in RapidConfig::load : failed to set up mass hypotheses for parameter " << params_[i]->name() << "." << std::endl
+				  << "                             fix your configuration file." << std::endl;
+			return false;
+		}
+	}
+
 	//automatically add the corrected mass variable if we have any invisible particles
 	for(unsigned int i=0; i<parts_.size(); ++i) {
 		if(parts_[i]->invisible()) {
@@ -609,11 +618,27 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 	RapidParam::ParamType type;
 	bool truth = false;
 	std::vector<RapidParticle*> partlist;
+	std::vector<TString> hypNames;
 	paramStr.Tokenize(name,from," ");
 	paramStr.Tokenize(buffer,from," ");
 	type = RapidParam::typeFromString(buffer);
 
 	while(paramStr.Tokenize(buffer,from," ")) {
+		//a particle index may be followed by an alternative mass hypothesis, e.g. 2{pi-}
+		TString hypName("");
+		Ssiz_t brace = buffer.Index("{");
+		if(brace>0 && buffer.EndsWith("}")) {
+			TString hypStr = buffer(brace+1, buffer.Length()-brace-2);
+			buffer = buffer(0, brace);
+			RapidParticleData* rpd = RapidParticleData::getInstance();
+			int hypId = rpd->pdgCode(hypStr);
+			if(hypId==0) {
+				std::cout << "WARNING in RapidConfig::loadParam : unknown particle type " << hypStr << " in mass hypothesis of parameter " << name << "." << std::endl
+					  << "                                    parameter " << name << " has not been added." << std::endl;
+				return 0;
+			}
+			hypName = rpd->getSanitisedName(hypId);
+		}
 		if(buffer.IsDec()) {
 			unsigned int index = buffer.Atoi();
 			if(index>=parts_.size()) {
@@ -622,6 +647,7 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 				return 0;
 			} else {
 				partlist.push_back(parts_[index]);
+				hypNames.push_back(hypName);
 			}
 		} else if(buffer=="TRUE") {
 			truth = true;
@@ -638,6 +664,18 @@ RapidParam* RapidConfig::loadParam(TString paramStr) {
 	}
 
 	RapidParam * param = new RapidParam(name, type, partlist, truth);
+	param->setMassHypotheses(hypNames);
+
+	if(param->hasMassHypotheses() &&
+	   (type == RapidParam::ProbNNmu || type == RapidParam::ProbNNe || type == RapidParam::ProbNNpi ||
+	    type == RapidParam::ProbNNk  || type == RapidParam::ProbNNp ||
+	    (type >= RapidParam::VtxX && type <= RapidParam::OrigZ))) {
+		std::cout << "WARNING in RapidConfig::loadParam : alternative mass hypotheses are not supported for parameter type " << param->typeName() << "." << std::endl
+			  << "                                    parameter " << name << " has not been added." << std::endl;
+		delete param;
+		return 0;
+	}
+
 	return param;
 }
 

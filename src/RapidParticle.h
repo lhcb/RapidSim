@@ -63,6 +63,7 @@ class RapidParticle {
 
 		unsigned int nMassHypotheses() { return altMasses_.size()+1; }
 		TString massHypothesisName();
+		bool getAltMass(TString name, double& mass);
 
 		bool hasCharm();
 		bool hasBeauty();

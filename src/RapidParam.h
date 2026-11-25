@@ -92,6 +92,13 @@ class RapidParam {
 		void getMinMax(const std::vector<RapidParticle*>& parts, double& min, double& max);
 		void getMinMax(double& min, double& max, bool recalculate=false);
 
+		//force alternative mass hypotheses for some of the particles in this parameter
+		//one (sanitised) hypothesis name per particle, empty string means nominal mass
+		void setMassHypotheses(const std::vector<TString>& hypNames) { hypNames_ = hypNames; }
+		bool hasMassHypotheses();
+		//look up the masses of the requested hypotheses - must be called once all particles are configured
+		bool resolveMassHypotheses();
+
 		//convenience functions for 1, 2 or 3-body parameters
 		void getMinMax(RapidParticle* part, double& min, double& max);
 		void getMinMax(RapidParticle* partA, RapidParticle* partB, double& min, double& max);
@@ -103,7 +110,12 @@ class RapidParam {
 		double evalPID();
 		double evalPos();
 
-		void setDefaultMinMax() {setDefaultMinMax(particles_,minVal_,maxVal_);}//TODO remove/make virtual and give a warning in the base class
+		//momentum of particle i, with its mass replaced if an alternative hypothesis is forced
+		TLorentzVector getMomentum(unsigned int i, bool truth);
+		//extend a mass range to cover the forced alternative hypotheses
+		void addForcedMassShifts(double& min, double& max);
+
+		void setDefaultMinMax() {setDefaultMinMax(particles_,minVal_,maxVal_); addForcedMassShifts(minVal_,maxVal_);}//TODO remove/make virtual and give a warning in the base class
 
 		void setDefaultMinMax(const std::vector<RapidParticle*>& parts, double& min, double& max);
 		void setMassMinMax(const std::vector<RapidParticle*>& parts, double& min, double& max);
@@ -116,6 +128,9 @@ class RapidParam {
 		//the following are only used for specific parameters
 		////TODO refactor into an inherited class RapidParamSpecific
 		std::vector<RapidParticle*> particles_;
+		//forced alternative mass hypotheses, parallel to particles_ (empty if none are forced)
+		std::vector<TString> hypNames_;
+		std::vector<double> hypMasses_; //negative means nominal mass
 		double minVal_;
 		double maxVal_;
 
