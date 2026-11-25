@@ -186,6 +186,8 @@ bool RapidExternalEvtGen::decay(std::vector<RapidParticle*>& parts) {
 #endif
 }
 
+
+
 bool RapidExternalEvtGen::setup() {
 #ifdef RAPID_EVTGEN
 	std::cout << "INFO in RapidExternalEvtGen::setup : Setting decay for external EvtGen generator." << std::endl;
