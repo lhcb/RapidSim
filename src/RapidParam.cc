@@ -19,6 +19,11 @@ double RapidParam::eval() {
 	double minip   = particles_[0]->getMinIP();
 	double ipSigma = particles_[0]->getSigmaIP();
 	double minipSigma = particles_[0]->getSigmaMinIP();
+	
+	double decaytime = particles_[0]->t();
+	int id = particles_[0]->id();
+	bool hasOsc = particles_[0]->hasOsc();
+
 	mom_.SetPxPyPzE(0.,0.,0.,0.);
 	if(truth_) {
 		for(unsigned int i=0; i<particles_.size(); ++i) {
@@ -73,6 +78,12 @@ double RapidParam::eval() {
 			return minipSigma;
 		case RapidParam::FD:
 			return fd;
+		case RapidParam::decaytime:
+			return decaytime;
+		case RapidParam::ID:
+			return id;	
+		case RapidParam::hasOsc:
+			return hasOsc;						
 		case RapidParam::ProbNNmu:
 		case RapidParam::ProbNNpi:
 		case RapidParam::ProbNNk:
@@ -170,6 +181,12 @@ bool RapidParam::canBeSmeared() {
 			return true;
 		case RapidParam::OrigZ:
 			return true;
+		case RapidParam::ID:
+			return false;	
+		case RapidParam::decaytime:
+			return false;	
+		case RapidParam::hasOsc:
+			return false;								
 		case RapidParam::UNKNOWN:
 			return true;
 	}
@@ -248,6 +265,12 @@ bool RapidParam::canBeTrue() {
 			return true;
 		case RapidParam::OrigZ:
 			return true;
+		case RapidParam::ID:
+			return false;	
+		case RapidParam::decaytime:
+			return false;		
+		case RapidParam::hasOsc:
+			return false;									
 		case RapidParam::UNKNOWN:
 			return true;
 	}
@@ -274,6 +297,23 @@ double RapidParam::evalPID() {
 	}
 	return pid;
 }
+
+// double RapidParam::evalID() {
+	
+// 	RapidParticleData * particleData = RapidParticleData::getInstance();
+// 	int id(0);
+// 	if (particles_[0]->massHypothesisName() == "") id = particles_[0]->id();
+// 	else id = particleData->pdgCode(particles_[0]->massHypothesisName());
+	
+// 	return id;
+// }
+// double RapidParam::evalDecayTime() {
+	
+// 	RapidParticleData * particleData = RapidParticleData::getInstance();
+// 	int decaytime(0);
+// 	decaytime = particles_[0]->t();
+// 	return decaytime;
+// }
 
 double RapidParam::evalCorrectedMass() {
 
@@ -458,6 +498,12 @@ TString RapidParam::typeName() {
 			return "origY";
 		case RapidParam::OrigZ:
 			return "origZ";
+		case RapidParam::ID:
+			return "ID";	
+		case RapidParam::decaytime:
+			return "decaytime";		
+		case RapidParam::hasOsc:
+			return "hasOsc";									
 		default:
 			std::cout << "WARNING in RapidParam::typeName : unknown type " << type_ << "." << std::endl
 				  << "                                  returning empty string." << std::endl;
@@ -534,6 +580,12 @@ RapidParam::ParamType RapidParam::typeFromString(TString str) {
 		return RapidParam::OrigY;
 	} else if(str=="origZ") {
 		return RapidParam::OrigZ;
+	} else if(str=="ID") {
+		return RapidParam::ID;
+	} else if(str=="decaytime") {
+		return RapidParam::decaytime;
+	} else if(str=="hasOsc") {
+		return RapidParam::hasOsc;		
 	} else {
 		std::cout << "WARNING in RapidParam::typeFromString : unknown type name " << str << "." << std::endl
 			  << "                                        returning mass parameter type." << std::endl;
